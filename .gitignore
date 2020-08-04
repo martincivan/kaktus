@@ -1,2 +1,8 @@
-# Project exclude paths
-/venv/
+# Default ignored files
+/shelf/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+/.idea/workspace.xml

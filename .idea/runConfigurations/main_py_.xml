@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="main.py " type="MicroPythonConfigurationType" factoryName="MicroPython" nameIsGenerated="true" path="$PROJECT_DIR$/main.py">
+    <module name="kaktus" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

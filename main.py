@@ -1,8 +1,9 @@
 import machine
-from machine import Pin#, I2C
+from machine import Pin, I2C
 # import ssd1306
 from network import WLAN
 import uasyncio as asyncio
+import config
 import uaiohttpclient as aiohttp
 
 PIN_SENZOR = 33
@@ -13,8 +14,7 @@ SEKUND_SUCHA = 60 * 60 * 24 * 2
 MERANIE_POCET = 5
 MERANIE_PAUZA = 1
 
-
-async def zmeraj():
+def zmeraj():
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
     napajanie_senzor.value(True)
     vstup = machine.ADC(Pin(PIN_SENZOR))
@@ -47,7 +47,7 @@ async def cvrk(sec=2, d=1000, freq=500):
 wlan = WLAN()
 wlan.active(True)
 if wlan.active():
-    wlan.connect("SSID", "heslo")
+    wlan.connect(config.WIFI_SSID, config.WIFI_PAS)
     while not wlan.isconnected():
         machine.idle()  # save power while waiting
     # oled.text("Pripojeny", 0, 0)
@@ -66,7 +66,7 @@ async def run(method, url, data=None):
     return resp
 
 async def getDateTime():
-    response = await run(method="POST", url="http://192.168.1.26:8080/api/v1/1oC2DlvMktSdNZLnmhKZ/telemetry", data="{\"iny_nazov_kluca\": 54}")
+    response = await run(method="POST", url="http://"+config.TB_URL+":8080/api/v1/"+config.TB_DEVICE_ID+"/telemetry", data="{\"iny_nazov_kluca\": 54}")
     datestring = response.headers["Date"]
     print("Mam datum: " + datestring)
     # date = datetime.strptime(datestring, " %a, %d %b %Y %H:%M:%S %Z")

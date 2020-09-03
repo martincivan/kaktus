@@ -18,6 +18,10 @@ def setupRTC():
     import ntptime
     ntptime.settime()
 
+def setupWDT():
+    machine.WDT(timeout=30000)
+
+
 def zmeraj():
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
     napajanie_senzor.value(True)
@@ -60,6 +64,7 @@ if wlan.active():
     # response = urequests.get('http://pumec.zapto.org/')
     # oled.text(response.text, 0, 16)
 
+setupWDT()
 setupRTC()
 
 async def ohlassa():
@@ -74,4 +79,4 @@ loop.close()
 # if namerane > KONSTANTA:
 #     cvrk()
 # machine.deepsleep(6 * 60 * 60 * 1000)
-# machine.deepsleep(10 * 1000)
+machine.deepsleep(10 * 1000)

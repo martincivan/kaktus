@@ -4,7 +4,7 @@ from machine import Pin, I2C
 from network import WLAN
 import uasyncio as asyncio
 import config
-import uaiohttpclient as aiohttp
+import uaiohttpclient
 
 PIN_SENZOR = 33
 PIN_NAPAJANIE_SENZOR = 27
@@ -13,6 +13,10 @@ KONSTANTA = 2000
 SEKUND_SUCHA = 60 * 60 * 24 * 2
 MERANIE_POCET = 5
 MERANIE_PAUZA = 1
+
+def setupRTC():
+    import ntptime
+    ntptime.settime()
 
 def zmeraj():
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
@@ -56,28 +60,13 @@ if wlan.active():
     # response = urequests.get('http://pumec.zapto.org/')
     # oled.text(response.text, 0, 16)
 
-
-async def run(method, url, data=None):
-    resp, writer = await aiohttp.request(method=method, url=url, data=data, timeout=30)
-    text = await resp.read()
-    writer.aclose()
-    text = text.decode("ascii")
-    resp.text = text
-    return resp
-
-async def getDateTime():
-    response = await run(method="POST", url="http://"+config.TB_URL+":8080/api/v1/"+config.TB_DEVICE_ID+"/telemetry", data="{\"iny_nazov_kluca\": 54}")
-    datestring = response.headers["Date"]
-    print("Mam datum: " + datestring)
-    # date = datetime.strptime(datestring, " %a, %d %b %Y %H:%M:%S %Z")
-    # print("naparsovane")
-    # print(str(date.hour))
-    return datestring
+setupRTC()
 
 async def ohlassa():
-    datum = await getDateTime()
+    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
 
-asyncio.set_debug(True)
+# asyncio.set_debug(True)
+
 loop = asyncio.get_event_loop()
 loop.run_until_complete(ohlassa())
 loop.close()

@@ -1,4 +1,3 @@
-import uasyncio as asyncio
 
 
 class ClientResponse:
@@ -45,6 +44,7 @@ class ChunkedClientResponse(ClientResponse):
 
 
 async def request_raw(method, url, data=None, timeout=None):
+    import uasyncio as asyncio
     try:
         proto, dummy, host, path = url.split("/", 3)
     except ValueError:
@@ -118,3 +118,12 @@ async def request(method, url, data=None, timeout=0):
     resp.message = message
     resp.protocol = protocol
     return resp, writer
+
+
+async def run(method, url, data=None):
+    resp, writer = await request(method=method, url=url, data=data, timeout=30)
+    text = await resp.read()
+    writer.aclose()
+    text = text.decode("ascii")
+    resp.text = text
+    return resp

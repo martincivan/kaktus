@@ -22,7 +22,7 @@ def setupWDT():
     machine.WDT(timeout=30000)
 
 
-def zmeraj():
+async def zmeraj():
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
     napajanie_senzor.value(True)
     vstup = machine.ADC(Pin(PIN_SENZOR))
@@ -70,10 +70,13 @@ setupRTC()
 async def ohlassa():
     await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
 
-# asyncio.set_debug(True)
+async def senddata():
+    data = await zmeraj()
+    print(str(data))
+    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID + "/telemetry", data="{\"tmp\": "+str(data)+"}")
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(ohlassa())
+loop.run_until_complete(senddata())
 loop.close()
 
 # if namerane > KONSTANTA:

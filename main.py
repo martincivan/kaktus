@@ -6,8 +6,11 @@ import uasyncio as asyncio
 import config
 import uaiohttpclient
 
-PIN_SENZOR = 33
+PIN_SENZOR_2_0 = 33
+PIN_SENZOR_STRED_1_2 = 32
+PIN_SENZOR_KRAJ_1_2 = 35
 PIN_NAPAJANIE_SENZOR = 27
+
 
 KONSTANTA = 2000
 SEKUND_SUCHA = 60 * 60 * 24 * 2
@@ -19,19 +22,39 @@ def setupRTC():
     ntptime.settime()
 
 def setupWDT():
-    machine.WDT(timeout=30000)
+     machine.WDT(timeout=60000)
 
 
 async def zmeraj():
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
     napajanie_senzor.value(True)
-    vstup = machine.ADC(Pin(PIN_SENZOR))
+    vstup = machine.ADC(Pin(PIN_SENZOR_2_0))
     hodnoty = []
     for i in range(MERANIE_POCET):
         await asyncio.sleep(MERANIE_PAUZA)
         hodnoty.append(vstup.read())
     napajanie_senzor.value(False)
-    return round(sum(hodnoty) / len(hodnoty))
+    data = round(sum(hodnoty) / len(hodnoty))
+    print(str(data))
+    return data
+
+async def zmeraj(pinSensor, text):
+    napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
+    napajanie_senzor.value(True)
+    vstup = machine.ADC(Pin(pinSensor))
+    hodnoty = []
+    for i in range(MERANIE_POCET):
+        await asyncio.sleep(MERANIE_PAUZA)
+        hodnoty.append(vstup.read())
+    napajanie_senzor.value(False)
+    data = round(sum(hodnoty) / len(hodnoty))
+    print(str(text) + ": "+str(data))
+    return data
+
+async def stop():
+    loop = asyncio.get_event_loop()
+    print("stop")
+    loop.stop()
 
 
 async def cvrk(sec=2, d=1000, freq=500):
@@ -68,18 +91,43 @@ setupWDT()
 setupRTC()
 
 async def ohlassa():
-    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
+    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID_1 + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
 
-async def senddata():
-    data = await zmeraj()
-    print(str(data))
-    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID + "/telemetry", data="{\"tmp\": "+str(data)+"}")
+async def senddata(pinSensor, text, deviceKey):
+    data = await zmeraj(pinSensor, text)
+    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + deviceKey + "/telemetry", data="{\"tmp\": "+str(data)+"}")
+#
+# import upip
+# upip.install('micropython-uasyncio')
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(senddata())
-loop.close()
+# loop = asyncio.get_event_loop()
+# loop.run_forever()
+for x in range(6):
+    loop = asyncio.get_event_loop()
+    loop.call_soon(senddata(PIN_SENZOR_2_0, 2.0, config.TB_DEVICE_ID_1))
+    loop.call_soon(senddata(PIN_SENZOR_STRED_1_2, "1.2-stred", config.TB_DEVICE_ID_2))
+    loop.call_soon(senddata(PIN_SENZOR_KRAJ_1_2, "1.2-kraj", config.TB_DEVICE_ID_3))
+    loop.call_later(15, stop())
+    print("iteracia")
+    loop.run_forever()
+
+    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
+    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
+    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
+
+    # loop.create_task(stop())
+    # print("mam tasks")
+    # loop.run_forever()
+
+
+
+
+    # loop.run_until_complete(zmeraj(PIN_SENZOR_2_0, 2.0))
+    # loop.close()
+
+
 
 # if namerane > KONSTANTA:
 #     cvrk()
 # machine.deepsleep(6 * 60 * 60 * 1000)
-machine.deepsleep(10 * 1000)
+# machine.deepsleep(10 * 1000)

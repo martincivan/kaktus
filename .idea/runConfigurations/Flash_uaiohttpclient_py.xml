@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Flash uaiohttpclient.py" type="MicroPythonConfigurationType" factoryName="MicroPython" nameIsGenerated="true" path="$PROJECT_DIR$/uaiohttpclient.py">
+    <module name="kaktus" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

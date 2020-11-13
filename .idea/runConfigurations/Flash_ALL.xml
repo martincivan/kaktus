@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Flash ALL" type="MicroPythonConfigurationType" factoryName="MicroPython" path="$PROJECT_DIR$/main.py">
+    <module name="kaktus" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Flash uaiohttpclient.py" run_configuration_type="MicroPythonConfigurationType" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Flash ssd1306.py" run_configuration_type="MicroPythonConfigurationType" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Flash config.py" run_configuration_type="MicroPythonConfigurationType" />
+    </method>
+  </configuration>
+</component>

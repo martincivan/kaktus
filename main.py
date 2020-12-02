@@ -11,6 +11,8 @@ PIN_SENZOR_STRED_1_2 = 32
 PIN_SENZOR_KRAJ_1_2 = 35
 PIN_NAPAJANIE_SENZOR = 27
 
+PIN_TOUCH = 4
+
 
 KONSTANTA = 2000
 SEKUND_SUCHA = 60 * 60 * 24 * 2
@@ -25,18 +27,18 @@ def setupWDT():
      machine.WDT(timeout=60000)
 
 
-async def zmeraj():
-    napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
-    napajanie_senzor.value(True)
-    vstup = machine.ADC(Pin(PIN_SENZOR_2_0))
-    hodnoty = []
-    for i in range(MERANIE_POCET):
-        await asyncio.sleep(MERANIE_PAUZA)
-        hodnoty.append(vstup.read())
-    napajanie_senzor.value(False)
-    data = round(sum(hodnoty) / len(hodnoty))
-    print(str(data))
-    return data
+# async def zmeraj():
+#     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
+#     napajanie_senzor.value(True)
+#     vstup = machine.ADC(Pin(PIN_SENZOR_2_0))
+#     hodnoty = []
+#     for i in range(MERANIE_POCET):
+#         await asyncio.sleep(MERANIE_PAUZA)
+#         hodnoty.append(vstup.read())
+#     napajanie_senzor.value(False)
+#     data = round(sum(hodnoty) / len(hodnoty))
+#     print(str(data))
+#     return data
 
 async def zmeraj(pinSensor, text):
     napajanie_senzor = machine.Pin(PIN_NAPAJANIE_SENZOR, machine.Pin.OUT)
@@ -49,6 +51,8 @@ async def zmeraj(pinSensor, text):
     napajanie_senzor.value(False)
     data = round(sum(hodnoty) / len(hodnoty))
     print(str(text) + ": "+str(data))
+    if pinSensor is PIN_SENZOR_2_0 and data > 1250:
+        await cvrk(6, 1000, 900)
     return data
 
 async def stop():
@@ -57,7 +61,7 @@ async def stop():
     loop.stop()
 
 
-async def cvrk(sec=2, d=1000, freq=500):
+async def cvrk(sec=4, d=1000, freq=500):
     pin = machine.PWM(Pin(14), freq)
     pin.duty(d)
     await asyncio.sleep(sec)
@@ -87,6 +91,16 @@ if wlan.active():
     # response = urequests.get('http://pumec.zapto.org/')
     # oled.text(response.text, 0, 16)
 
+
+t = machine.TouchPad(Pin(PIN_TOUCH))
+t.config(500)
+read = t.read()
+print(read)
+if read < 200:
+    import upip
+    upip.install('micropython-uasyncio')
+    exit(0)
+
 setupWDT()
 setupRTC()
 
@@ -94,40 +108,17 @@ async def ohlassa():
     await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID_1 + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
 
 async def senddata(pinSensor, text, deviceKey):
+    wdt = machine.WDT(timeout=60000)
+    wdt.feed()
     data = await zmeraj(pinSensor, text)
     await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + deviceKey + "/telemetry", data="{\"tmp\": "+str(data)+"}")
-#
-# import upip
-# upip.install('micropython-uasyncio')
 
-# loop = asyncio.get_event_loop()
-# loop.run_forever()
-for x in range(6):
-    loop = asyncio.get_event_loop()
-    loop.call_soon(senddata(PIN_SENZOR_2_0, 2.0, config.TB_DEVICE_ID_1))
-    loop.call_soon(senddata(PIN_SENZOR_STRED_1_2, "1.2-stred", config.TB_DEVICE_ID_2))
-    loop.call_soon(senddata(PIN_SENZOR_KRAJ_1_2, "1.2-kraj", config.TB_DEVICE_ID_3))
-    loop.call_later(15, stop())
-    print("iteracia")
-    loop.run_forever()
+loop = asyncio.get_event_loop()
+loop.call_soon(senddata(PIN_SENZOR_2_0, 2.0, config.TB_DEVICE_ID_1))
+loop.call_soon(senddata(PIN_SENZOR_STRED_1_2, "1.2-stred", config.TB_DEVICE_ID_2))
+loop.call_soon(senddata(PIN_SENZOR_KRAJ_1_2, "1.2-kraj", config.TB_DEVICE_ID_3))
+loop.call_later(15, stop())
+print("iteracia")
+loop.run_forever()
 
-    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
-    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
-    # tasks = loop.create_task(zmeraj(PIN_SENZOR_2_0, 2.0))
-
-    # loop.create_task(stop())
-    # print("mam tasks")
-    # loop.run_forever()
-
-
-
-
-    # loop.run_until_complete(zmeraj(PIN_SENZOR_2_0, 2.0))
-    # loop.close()
-
-
-
-# if namerane > KONSTANTA:
-#     cvrk()
-# machine.deepsleep(6 * 60 * 60 * 1000)
-# machine.deepsleep(10 * 1000)
+machine.deepsleep(10 * 1000)

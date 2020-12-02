@@ -117,6 +117,7 @@ async def request(method, url, data=None, timeout=0):
         resp.headers[split[0]] = split[1]
     resp.message = message
     resp.protocol = protocol
+    reader.aclose()
     return resp, writer
 
 
@@ -124,6 +125,8 @@ async def run(method, url, data=None):
     resp, writer = await request(method=method, url=url, data=data, timeout=30)
     text = await resp.read()
     writer.aclose()
+    # writer.close()
+
     text = text.decode("ascii")
     resp.text = text
     return resp

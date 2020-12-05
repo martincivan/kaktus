@@ -53,59 +53,29 @@ async def zmeraj(pinSensor, text):
     print(str(text) + ": "+str(data))
     if pinSensor is PIN_SENZOR_2_0 and data > 1250:
         await cvrk(6, 1000, 900)
+    else:
+        await ohlassa(config.TB_DEVICE_WATER_PUMP, 0)
     return data
+
+async def ohlassa(deviceKey, data):
+    print("odosielam polievam "+str(data))
+    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + deviceKey + "/telemetry", data="{\"iny_nazov_kluca\": "+str(data)+"}")
+
+def instalUasyncio():
+    import upip
+    upip.install('micropython-uasyncio')
 
 async def stop():
     loop = asyncio.get_event_loop()
     print("stop")
     loop.stop()
 
-
 async def cvrk(sec=4, d=1000, freq=500):
+    await ohlassa(config.TB_DEVICE_WATER_PUMP, 1000)
     pin = machine.PWM(Pin(14), freq)
     pin.duty(d)
     await asyncio.sleep(sec)
     pin.duty(0)
-
-
-# def nachystaj_displej():
-#     i2c = I2C(-1, scl=Pin(22), sda=Pin(21))
-#     oled_width = 128
-#     oled_height = 64
-#     return ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
-#
-#
-# oled = nachystaj_displej()
-# oled.text("Zapnuty", 0, 0)
-# oled.show()
-
-wlan = WLAN()
-wlan.active(True)
-if wlan.active():
-    wlan.connect(config.WIFI_SSID, config.WIFI_PAS)
-    while not wlan.isconnected():
-        machine.idle()  # save power while waiting
-    # oled.text("Pripojeny", 0, 0)
-    # oled.text(wlan.ifconfig()[0], 0, 8)
-    # oled.show()
-    # response = urequests.get('http://pumec.zapto.org/')
-    # oled.text(response.text, 0, 16)
-
-
-t = machine.TouchPad(Pin(PIN_TOUCH))
-t.config(500)
-read = t.read()
-print(read)
-if read < 200:
-    import upip
-    upip.install('micropython-uasyncio')
-    exit(0)
-
-setupWDT()
-setupRTC()
-
-async def ohlassa():
-    await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + config.TB_DEVICE_ID_1 + "/telemetry", data="{\"iny_nazov_kluca\": 54}")
 
 async def senddata(pinSensor, text, deviceKey):
     wdt = machine.WDT(timeout=60000)
@@ -113,10 +83,32 @@ async def senddata(pinSensor, text, deviceKey):
     data = await zmeraj(pinSensor, text)
     await uaiohttpclient.run(method="POST", url="http://" + config.TB_URL + ":8080/api/v1/" + deviceKey + "/telemetry", data="{\"tmp\": "+str(data)+"}")
 
+
+wlan = WLAN()
+wlan.active(True)
+if wlan.active():
+    wlan.connect(config.WIFI_SSID, config.WIFI_PAS)
+    while not wlan.isconnected():
+        machine.idle()
+# save power while waiting
+t = machine.TouchPad(Pin(PIN_TOUCH))
+t.config(500)
+read = t.read()
+print(read)
+
+if read < 200:
+    led = Pin(2, Pin.OUT)
+    led.value(True)
+    # instalUasyncio()
+    exit(0)
+
+setupWDT()
+
+setupRTC()
+
+
 loop = asyncio.get_event_loop()
 loop.call_soon(senddata(PIN_SENZOR_2_0, 2.0, config.TB_DEVICE_ID_1))
-loop.call_soon(senddata(PIN_SENZOR_STRED_1_2, "1.2-stred", config.TB_DEVICE_ID_2))
-loop.call_soon(senddata(PIN_SENZOR_KRAJ_1_2, "1.2-kraj", config.TB_DEVICE_ID_3))
 loop.call_later(15, stop())
 print("iteracia")
 loop.run_forever()
